@@ -63,18 +63,14 @@
     };
 
     behaviors {
-        /* QMK の TT(n) 相当: 長押し=一時有効 / タップ=トグル */
-        tt_2: tt_2 {
+        /* QMK の TT(n) 相当: 長押し=一時有効 / タップ=トグル（使うときは &tt N N） */
+        tt: tt {
             compatible = "zmk,behavior-hold-tap";
-            #binding-cells = <0>;
+            #binding-cells = <2>;
             tapping-term-ms = <200>;
-            bindings = <&mo 2>, <&tog 2>;
-        };
-        tt_3: tt_3 {
-            compatible = "zmk,behavior-hold-tap";
-            #binding-cells = <0>;
-            tapping-term-ms = <200>;
-            bindings = <&mo 3>, <&tog 3>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&mo>, <&tog>;
         };
     };
 
@@ -90,6 +86,7 @@
     &kp Z              &kp X              &kp C              &kp V              &kp B              &trans             &trans             &kp N              &kp M              &kp COMMA          &kp DOT            &kp MINUS
     &kp LCTRL          &lt 1 LGUI         &kp LALT           &kp LSHFT          &lt 2 BSPC         &lt 3 SPACE        &lt 4 INT_MUHENKAN  &lt 5 INT_HENKAN   &kp INS
             >;
+        };
 
         /* ===================== L1_WIN ===================== */
         l1_win {
@@ -100,6 +97,7 @@
     &trans             &kp LG(X)          &trans             &trans             &kp LC(LA(PAUSE_BREAK))  &trans             &kp LCAPS          &kp LG(M)          &trans             &trans             &trans             &trans
     &trans             &trans             &trans             &trans             &trans             &kp LG(SPACE)      &trans             &trans             &trans
             >;
+        };
 
         /* ===================== L2_SYMBOL ===================== */
         l2_symbol {
@@ -110,6 +108,7 @@
     &kp LS(INT_YEN)    &trans             &trans             &kp LC(SEMICOLON)  &kp LC(SQT)        &trans             &trans             &kp LS(COMMA)      &kp LS(DOT)        &kp LS(SLASH)      &kp LS(INT_RO)     &kp INT_RO
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans
             >;
+        };
 
         /* ===================== L3_NUM ===================== */
         l3_num {
@@ -120,6 +119,7 @@
     &kp LS(TAB)        &trans             &trans             &trans             &kp LCTRL          &trans             &trans             &kp N1             &kp N2             &kp N3             &kp DOT            &kp COMMA
     &trans             &trans             &trans             &kp LS(SPACE)      &trans             &trans             &trans             &kp N0             &kp KP_MULTIPLY
             >;
+        };
 
         /* ===================== L4_NAV ===================== */
         l4_nav {
@@ -128,8 +128,9 @@
     &trans             &trans             &trans             &trans             &trans             &kp BSPC           &kp DEL            &kp INS            &kp HOME           &kp END
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LSHFT          &kp UP_ARROW       &kp LCTRL          &kp PG_UP          &kp ENTER
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LEFT_ARROW     &kp DOWN_ARROW     &kp RIGHT_ARROW    &kp PG_DN          &kp LS(LCTRL)
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &tt_3              &trans
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &tt 3 3              &trans
             >;
+        };
 
         /* ===================== L5_FUNC ===================== */
         l5_func {
@@ -138,8 +139,9 @@
     &kp F1             &kp F2             &kp F3             &kp F4             &kp F5             &trans             &trans             &trans             &kp LC(PG_UP)      &kp LC(PG_DN)
     &kp F6             &kp F7             &kp F8             &kp F9             &kp F10            &trans             &trans             &trans             &trans             &trans             &trans             &trans
     &kp F11            &kp F12            &kp LC(PAUSE_BREAK)  &kp PAUSE_BREAK    &kp PSCRN          &trans             &trans             &trans             &trans             &trans             &trans             &trans
-    &trans             &trans             &trans             &trans             &trans             &trans             &tt_2              &trans             &trans
+    &trans             &trans             &trans             &trans             &trans             &trans             &tt 2 2              &trans             &trans
             >;
+        };
 
         /* ===================== L6_MOUSE ===================== */
         l6_mouse {
