@@ -1,23 +1,24 @@
 /*
- * roBa keymap  ---  Keyball39 (takashicompany2025 / miniZone + Remap 最新) 完全移植
+ * roBa keymap  ---  Keyball39 (takashicompany2025 / miniZone + Remap 最新) 移植
  *
- * Layer 番号は Keyball39 の Layer 0-6 をそのまま維持
+ * Layer 構成（MOUSE を最下位に置くため、Keyball の番号 +1）
  *   L0 BASE   : 常時
- *   L1 WIN    : 左親指2（Win）長押し
- *   L2 SYMBOL : 左親指5（BS）長押し
- *   L3 NUM    : 左親指6（Space）長押し
- *   L4 NAV    : 右親指1（無変換）長押し
- *   L5 FUNC   : 右親指2（変換）長押し
- *   L6 MOUSE  : トラックボールを動かすと自動で有効
+ *   L1 MOUSE  : トラックボールを動かすと自動（最下位なので上の層が常に優先）
+ *   L2 WIN    : 左親指2（Win）長押し
+ *   L3 SYMBOL : 左親指5（BS）長押し
+ *   L4 NUM    : 左親指6（Space）長押し / NAV で 変換 をタップしてロック
+ *   L5 NAV    : 右親指1（無変換）長押し
+ *   L6 FUNC   : 右親指2（変換）長押し
  *
- * 行の並びは roBa の matrix transform 準拠（1レイヤー43個）
+ * 余りポート（すべて長押しで発動・タップは無効）
+ *   左内側上 : BT_SEL 0 / 左内側下 : BT_SEL 1
+ *   右内側上 : BT_SEL 2 / 右内側下 : BT_CLR_ALL
+ *
+ * 行の並び（1レイヤー43個）
  *   1行目: 左5 + 右5
- *   2行目: 左5 + [左内側=予備] + [右内側=予備] + 右5
- *   3行目: 左5 + [左内側=予備] + [右内側=予備] + 右5
+ *   2行目: 左5 + [左内側] + [右内側] + 右5
+ *   3行目: 左5 + [左内側] + [右内側] + 右5
  *   4行目: 左親指6 + 右親指2 + 右最外下1
- *
- * 空けてある予備ポート（roBa 独自機能を後から足せる）
- *   左内側 2段目 / 左内側 3段目 / 右内側 2段目 / 右内側 3段目 / エンコーダ
  */
 
 #include <behaviors.dtsi>
@@ -25,45 +26,37 @@
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/pointing.h>
 
-/* トラックボール: miniZone と同じ「動いたら L6」 */
+/* 自動マウスレイヤー: 最下位に置き、他の層が常に優先されるようにする */
 &trackball {
-    automouse-layer = <6>;
+    automouse-layer = <1>;
 };
 
-/* Keyball の TAPPING_TERM 200 に合わせる */
-&mt { flavor = "balanced"; quick-tap-ms = <0>; tapping-term-ms = <200>; };
-&lt { flavor = "balanced"; quick-tap-ms = <0>; tapping-term-ms = <200>; };
+/* タップ判定 200ms（Keyball の TAPPING_TERM と同じ）
+   quick-tap-ms=200: 同じキーを素早く2回押して2回目を保持すると押しっぱなし扱い＝連打 */
+&mt { flavor = "balanced"; quick-tap-ms = <0>;   tapping-term-ms = <200>; };
+&lt { flavor = "balanced"; quick-tap-ms = <200>; tapping-term-ms = <200>; };
 
 / {
     macros {
-        /* Remap Macro 0 （1文字目が小文字なら LS() を外す） */
-        macro_0: macro_0 {
+        /* タップ時: マウスレイヤーを解除してから IME キーを送る */
+        m_mu: m_mu {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
             wait-ms = <10>;
             tap-ms = <10>;
-            bindings = <&macro_tap &kp LS(W) &kp N1 &kp T &kp Y &kp Y &kp T &kp N6 &kp N5 &kp N6 &kp N5>;
+            bindings = <&macro_tap &to 0 &macro_tap &kp INT_MUHENKAN>;
         };
-        /* Remap Macro 1 （同上） */
-        macro_1: macro_1 {
+        m_hn: m_hn {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
             wait-ms = <10>;
             tap-ms = <10>;
-            bindings = <&macro_tap &kp LS(A) &kp MINUS &kp Z &kp I &kp P &kp N0 &kp N8 &kp N2 &kp N2>;
-        };
-        /* Remap Macro 2 （同上） */
-        macro_2: macro_2 {
-            compatible = "zmk,behavior-macro";
-            #binding-cells = <0>;
-            wait-ms = <10>;
-            tap-ms = <10>;
-            bindings = <&macro_tap &kp LS(S) &kp Y &kp S &kp T &kp E &kp M &kp N3 &kp N0 &kp N2 &kp N2>;
+            bindings = <&macro_tap &to 0 &macro_tap &kp INT_HENKAN>;
         };
     };
 
     behaviors {
-        /* QMK の TT(n) 相当: 長押し=一時有効 / タップ=トグル（使うときは &tt N N） */
+        /* QMK の TT(n): 長押し=一時有効 / タップ=トグル。 &tt N N */
         tt: tt {
             compatible = "zmk,behavior-hold-tap";
             #binding-cells = <2>;
@@ -71,6 +64,36 @@
             quick-tap-ms = <0>;
             flavor = "balanced";
             bindings = <&mo>, <&tog>;
+        };
+
+        /* 無変換: 長押し=L5 / タップ=IMEオフ + マウスレイヤー解除 */
+        ltm: ltm {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <200>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&mo>, <&m_mu>;
+        };
+
+        /* 変換: 長押し=L6 / タップ=IMEオン + マウスレイヤー解除 */
+        lth: lth {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <200>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&mo>, <&m_hn>;
+        };
+
+        /* BT: 長押しで発動 / タップ無効。 例 &bth BT_SEL_CMD 0 / &bth BT_CLR_ALL_CMD 0 */
+        bth: bth {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <400>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&bt>, <&trans>;
         };
     };
 
@@ -82,26 +105,37 @@
             display-name = "BASE";
             bindings = <
     &kp Q              &kp W              &kp E              &kp R              &kp T              &kp Y              &kp U              &kp I              &kp O              &kp P
-    &kp A              &kp S              &kp D              &kp F              &kp G              &trans             &trans             &kp H              &kp J              &kp K              &kp L              &kp ENTER
-    &kp Z              &kp X              &kp C              &kp V              &kp B              &trans             &trans             &kp N              &kp M              &kp COMMA          &kp DOT            &kp MINUS
-    &kp LCTRL          &lt 1 LGUI         &kp LALT           &kp LSHFT          &lt 2 BSPC         &lt 3 SPACE        &lt 4 INT_MUHENKAN  &lt 5 INT_HENKAN   &kp INS
+    &kp A              &kp S              &kp D              &kp F              &kp G              &bth BT_SEL_CMD 0      &bth BT_SEL_CMD 2      &kp H              &kp J              &kp K              &kp L              &kp ENTER
+    &kp Z              &kp X              &kp C              &kp V              &kp B              &bth BT_SEL_CMD 1      &bth BT_CLR_ALL_CMD 0  &kp N              &kp M              &kp COMMA          &kp DOT            &kp MINUS
+    &kp LCTRL          &lt 2 LGUI         &kp LALT           &kp LSHFT          &lt 3 BSPC         &lt 4 SPACE        &ltm 5 0           &lth 6 0           &kp INS
             >;
         };
 
-        /* ===================== L1_WIN ===================== */
-        l1_win {
-            display-name = "L1_WIN";
+        /* ===================== MOUSE ===================== */
+        mouse {
+            display-name = "MOUSE";
             bindings = <
-    &macro_0           &macro_1           &macro_2           &kp LA(F4)         &kp LC(LA(DEL))    &trans             &trans             &trans             &trans             &trans
-    &kp LGUI           &kp LG(E)          &kp LG(R)          &trans             &kp LG(LC(LS(B)))  &trans             &trans             &trans             &trans             &kp LG(L)          &trans             &trans
-    &trans             &kp LG(X)          &trans             &trans             &kp LC(LA(PAUSE_BREAK))  &trans             &kp LCAPS          &kp LG(M)          &trans             &trans             &trans             &trans
+    &trans             &trans             &trans             &trans             &trans             &kp LC(M)          &kp LC(W)          &kp LG(J)          &kp LC(LS(TAB))    &kp LC(TAB)
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LG(Y)          &mkp MB1           &mkp MB3           &mkp MB2           &kp ENTER
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(LS(N))      &kp LG(C)          &kp LC(C)          &kp LC(V)          &kp LG(E)
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(SLASH)
+            >;
+        };
+
+        /* ===================== WIN ===================== */
+        win {
+            display-name = "WIN";
+            bindings = <
+    &trans             &trans             &trans             &kp LA(F4)         &kp LC(LA(DEL))    &trans             &trans             &trans             &trans             &trans
+    &kp LGUI           &kp LG(E)          &kp LG(R)          &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LG(L)          &trans
+    &trans             &kp LG(X)          &trans             &trans             &kp LC(LA(PAUSE_BREAK))  &trans             &trans             &kp LCAPS          &kp LG(M)          &trans             &trans             &trans
     &trans             &trans             &trans             &trans             &trans             &kp LG(SPACE)      &trans             &trans             &trans
             >;
         };
 
-        /* ===================== L2_SYMBOL ===================== */
-        l2_symbol {
-            display-name = "L2_SYMBOL";
+        /* ===================== SYMBOL ===================== */
+        symbol {
+            display-name = "SYMBOL";
             bindings = <
     &kp LS(N1)         &kp LS(N2)         &kp LS(N3)         &kp LS(N4)         &kp LS(N5)         &kp LS(N6)         &kp LS(N7)         &kp LS(N8)         &kp LS(N9)         &kp LS(MINUS)
     &kp EQUAL          &kp PLUS           &kp LEFT_BRACE     &kp RIGHT_BRACE    &kp PIPE           &trans             &trans             &kp RIGHT_BRACKET  &kp BACKSLASH      &kp SEMICOLON      &kp SQT            &kp LEFT_BRACKET
@@ -110,9 +144,9 @@
             >;
         };
 
-        /* ===================== L3_NUM ===================== */
-        l3_num {
-            display-name = "L3_NUM";
+        /* ===================== NUM ===================== */
+        num {
+            display-name = "NUM";
             bindings = <
     &kp ESC            &trans             &trans             &kp LA(F11)        &kp GRAVE          &kp N7             &kp N8             &kp N9             &kp MINUS          &kp SLASH
     &kp TAB            &trans             &trans             &kp LALT           &kp LSHFT          &trans             &trans             &kp N4             &kp N5             &kp N6             &kp KP_PLUS        &kp KP_ENTER
@@ -121,36 +155,25 @@
             >;
         };
 
-        /* ===================== L4_NAV ===================== */
-        l4_nav {
-            display-name = "L4_NAV";
+        /* ===================== NAV ===================== */
+        nav {
+            display-name = "NAV";
             bindings = <
     &trans             &trans             &trans             &trans             &trans             &kp BSPC           &kp DEL            &kp INS            &kp HOME           &kp END
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LSHFT          &kp UP_ARROW       &kp LCTRL          &kp PG_UP          &kp ENTER
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LEFT_ARROW     &kp DOWN_ARROW     &kp RIGHT_ARROW    &kp PG_DN          &kp LS(LCTRL)
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &tt 3 3              &trans
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &tt 4 4            &trans
             >;
         };
 
-        /* ===================== L5_FUNC ===================== */
-        l5_func {
-            display-name = "L5_FUNC";
+        /* ===================== FUNC ===================== */
+        func {
+            display-name = "FUNC";
             bindings = <
     &kp F1             &kp F2             &kp F3             &kp F4             &kp F5             &trans             &trans             &trans             &kp LC(PG_UP)      &kp LC(PG_DN)
     &kp F6             &kp F7             &kp F8             &kp F9             &kp F10            &trans             &trans             &trans             &trans             &trans             &trans             &trans
     &kp F11            &kp F12            &kp LC(PAUSE_BREAK)  &kp PAUSE_BREAK    &kp PSCRN          &trans             &trans             &trans             &trans             &trans             &trans             &trans
-    &trans             &trans             &trans             &trans             &trans             &trans             &tt 2 2              &trans             &trans
-            >;
-        };
-
-        /* ===================== L6_MOUSE ===================== */
-        l6_mouse {
-            display-name = "L6_MOUSE";
-            bindings = <
-    &trans             &trans             &trans             &trans             &trans             &kp LC(M)          &kp LC(W)          &kp LG(J)          &kp LC(LS(TAB))    &kp LC(TAB)
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LG(Y)          &mkp MB1           &mkp MB3           &mkp MB2           &kp ENTER
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(LS(N))      &kp LG(C)          &kp LC(C)          &kp LC(V)          &kp LG(E)
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(SLASH)
+    &trans             &trans             &trans             &trans             &trans             &trans             &tt 3 3            &trans             &trans
             >;
         };
     };
