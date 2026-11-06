@@ -46,6 +46,14 @@
             tap-ms = <10>;
             bindings = <&macro_tap &to 0 &macro_tap &kp INT_MUHENKAN>;
         };
+        /* タップ時: マウスレイヤーを解除してから A を送る（miniZone の disable_mouse_layer_keys 相当） */
+        m_a: m_a {
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            wait-ms = <10>;
+            tap-ms = <10>;
+            bindings = <&macro_tap &to 0 &macro_tap &kp A>;
+        };
         m_hn: m_hn {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
@@ -116,7 +124,7 @@
             display-name = "MOUSE";
             bindings = <
     &trans             &trans             &trans             &trans             &trans             &kp LC(M)          &kp LC(W)          &kp LG(J)          &kp LC(LS(TAB))    &kp LC(TAB)
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LG(Y)          &mkp MB1           &mkp MB3           &mkp MB2           &kp ENTER
+    &m_a               &trans             &trans             &trans             &trans             &trans             &trans             &kp                LG(Y)              &mkp               MB1                &mkp               MB3                &mkp               MB2                &kp                ENTER            
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(LS(N))      &kp LG(C)          &kp LC(C)          &kp LC(V)          &kp LG(E)
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(SLASH)
             >;
