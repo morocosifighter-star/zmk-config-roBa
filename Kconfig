@@ -1,7 +1,9 @@
 config ZMK_BEHAVIOR_LAYER_OFF
-    bool "Layer Off behavior"
+    bool
     default y
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
 
 config ZMK_BEHAVIOR_LHT
-    bool "Layer hold/tap behavior"
+    bool
     default y
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
