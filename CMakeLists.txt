@@ -1,0 +1,3 @@
+zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_ZMK_BEHAVIOR_LAYER_OFF src/behavior_layer_off.c)
+zephyr_library_sources_ifdef(CONFIG_ZMK_BEHAVIOR_LHT src/behavior_lht.c)

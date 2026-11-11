@@ -1,0 +1,7 @@
+config ZMK_BEHAVIOR_LAYER_OFF
+    bool "Layer Off behavior"
+    default y
+
+config ZMK_BEHAVIOR_LHT
+    bool "Layer hold/tap behavior"
+    default y

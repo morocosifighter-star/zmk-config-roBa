@@ -1,0 +1,5 @@
+description: Layer on press, tap key on release
+description: |
+  param1 = layer, param2 = keycode
+compatible: "zmk,behavior-lht"
+include: two_param.yaml
