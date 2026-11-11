@@ -7,7 +7,7 @@
  *       それを防ぐため、MOUSE で何か定義している16箇所は上位層にも明示的に書いてある
  *       （Keyball の「▽はレイヤ0に落ちる」と同じ結果になる）。
  *
- * 余りポート: 左内側上 BT_SEL0(長押し) / 左内側下 BT_SEL1(長押し) / 右内側上 OUT_TOG(USB⇔BLE) / 右内側下 BT_CLR_ALL(長押し)
+ * 余りポート: 左内側上 BT_SEL0(長押し) / 左内側下 BT_SEL1(長押し) / 右内側上 長押し=BT_SEL2 / タップ=USB⇔BLE / 右内側下 BT_CLR_ALL(長押し)
  */
 
 #include <behaviors.dtsi>
@@ -18,13 +18,26 @@
 
 &trackball {
     automouse-layer = <1>;
+    scroll-layers   = <7>;   /* L7 SCROLL が有効な間はトラックボール＝スクロール */
 };
 
 &mt { flavor = "balanced"; quick-tap-ms = <0>;   tapping-term-ms = <200>; };
-&lt { flavor = "balanced"; quick-tap-ms = <200>; tapping-term-ms = <200>; };
+/* レイヤータップ（Space/BS/LGUI）: 他のキーを押した瞬間にレイヤー確定＝Keyball と同じ体感速度
+   quick-tap-ms=200 は「同じキーを素早く2回押して2回目を保持＝連打」用 */
+/* 押した瞬間にレイヤーを有効化（他のキーの到着を待たない）
+   タップ（他キーなしで離す）なら最後にスペース/BSを送る */
+/* hold-while-undecided: 押した瞬間からレイヤー有効（右手キーの到着を待たない）
+   IMEマクロが &to 0 ではなく &loff 1（MOUSE層だけ解除）なので、押しっぱなしの層は壊れない */
+&lt { flavor = "hold-preferred"; quick-tap-ms = <200>; tapping-term-ms = <200>; hold-while-undecided; };
 
 / {
     macros {
+        /* BT プロファイル選択（hold-tap から呼ぶため引数なしのマクロにしておく） */
+        sel0: sel0 { compatible = "zmk,behavior-macro"; #binding-cells = <0>; bindings = <&bt BT_SEL_CMD 0>; };
+        sel1: sel1 { compatible = "zmk,behavior-macro"; #binding-cells = <0>; bindings = <&bt BT_SEL_CMD 1>; };
+        sel2: sel2 { compatible = "zmk,behavior-macro"; #binding-cells = <0>; bindings = <&bt BT_SEL_CMD 2>; };
+        clrall: clrall { compatible = "zmk,behavior-macro"; #binding-cells = <0>; bindings = <&bt BT_CLR_ALL_CMD 0>; };
+
         macro_0: macro_0 {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
@@ -72,14 +85,14 @@
             #binding-cells = <0>;
             wait-ms = <0>;
             tap-ms = <0>;
-            bindings = <&macro_tap &to 0 &macro_tap &kp INT_MUHENKAN>;
+            bindings = <&macro_tap &loff 1 &macro_tap &kp INT_MUHENKAN>;
         };
         m_hn: m_hn {
             compatible = "zmk,behavior-macro";
             #binding-cells = <0>;
             wait-ms = <0>;
             tap-ms = <0>;
-            bindings = <&macro_tap &to 0 &macro_tap &kp INT_HENKAN>;
+            bindings = <&macro_tap &loff 1 &macro_tap &kp INT_HENKAN>;
         };
     };
 
@@ -108,13 +121,65 @@
             flavor = "tap-preferred";
             bindings = <&mo>, <&m_hn>;
         };
-        bth: bth {
+        /* BT: 長押しで発動（タップ無効）
+           hold-tap の bindings は「引数なしの phandle」しか置けないため、
+           プロファイル番号はマクロ側に埋め込んでいる */
+        /* 中クリックキー: 押している間はスクロール / タップで中クリック */
+        scrl: scrl {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <200>;
+            quick-tap-ms = <0>;
+            flavor = "hold-preferred";
+            hold-while-undecided;
+            bindings = <&mo>, <&mkp>;
+        };
+
+        /* 押した瞬間にレイヤーON / 単独タップなら離した時にキー送出
+           （ZMK の hold-tap は未確定を1個しか持てないため、無変換を押したまま
+             スペースを押すとスペース側が反応しない。それを避ける専用ビヘイビア） */
+        lht: lht {
+            compatible = "zmk,behavior-lht";
+            #binding-cells = <2>;
+        };
+
+        /* 指定レイヤーだけを解除する（&to 0 と違い、押しっぱなしの層を巻き込まない） */
+        loff: loff {
+            compatible = "zmk,behavior-layer-off";
+            #binding-cells = <1>;
+        };
+
+        bt0: bt0 {
             compatible = "zmk,behavior-hold-tap";
             #binding-cells = <2>;
             tapping-term-ms = <400>;
             quick-tap-ms = <0>;
             flavor = "balanced";
-            bindings = <&bt>, <&trans>;
+            bindings = <&sel0>, <&trans>;
+        };
+        bt1: bt1 {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <400>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&sel1>, <&trans>;
+        };
+        bt2o: bt2o {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <400>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&sel2>, <&out>;
+        };
+        bclr: bclr {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            tapping-term-ms = <400>;
+            quick-tap-ms = <0>;
+            flavor = "balanced";
+            bindings = <&clrall>, <&trans>;
         };
     };
 
@@ -125,9 +190,9 @@
             display-name = "BASE";
             bindings = <
     &kp Q              &kp W              &kp E              &kp R              &kp T              &kp Y              &kp U              &kp I              &kp O              &kp P
-    &kp A              &kp S              &kp D              &kp F              &kp G              &bth BT_SEL_CMD 0  &out OUT_TOG  &kp H              &kp J              &kp K              &kp L              &kp ENTER
-    &kp Z              &kp X              &kp C              &kp V              &kp B              &bth BT_SEL_CMD 1  &bth BT_CLR_ALL_CMD 0  &kp N              &kp M              &kp COMMA          &kp DOT            &kp MINUS
-    &kp LCTRL          &lt 2 LGUI         &kp LALT           &kp LSHFT          &lt 3 BSPC         &lt 4 SPACE        &ltm 5 0           &lth 6 0           &kp INS
+    &kp A              &kp S              &kp D              &kp F              &kp G              &bt0 0 0  &bt2o 0 0  &kp H              &kp J              &kp K              &kp L              &kp ENTER
+    &kp Z              &kp X              &kp C              &kp V              &kp B              &bt1 0 0  &bclr 0 0  &kp N              &kp M              &kp COMMA          &kp DOT            &kp MINUS
+    &kp LCTRL          &lht 2 LGUI         &kp LALT           &kp LSHFT          &lht 3 BSPC         &lht 4 SPACE        &ltm 5 0           &lth 6 0           &kp INS
             >;
         };
 
@@ -135,7 +200,7 @@
             display-name = "MOUSE";
             bindings = <
     &trans             &trans             &trans             &trans             &trans             &kp LC(M)          &kp LC(W)          &mwj               &kp LC(LS(TAB))    &kp LC(TAB)
-    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &mwy               &mkp MB1           &mkp MB3           &mkp MB2           &kp ENTER
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &mwy               &mkp               MB1                &scrl              7                  MB3                &mkp               MB2                &kp                ENTER            
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(LS(N))      &mwc               &kp LC(C)          &kp LC(V)          &kp LG(E)
     &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &kp LC(SLASH)
             >;
@@ -188,6 +253,16 @@
     &kp F6             &kp F7             &kp F8             &kp F9             &kp F10            &trans             &trans             &kp H              &kp J              &kp K              &kp L              &kp ENTER
     &kp F11            &kp F12            &kp LC(PAUSE_BREAK)  &kp PAUSE_BREAK    &kp PSCRN          &trans             &trans             &kp N              &kp M              &kp COMMA          &kp DOT            &kp MINUS
     &trans             &trans             &trans             &trans             &trans             &trans             &tt 3 3            &trans             &kp INS
+            >;
+        };
+
+        scroll {
+            display-name = "SCROLL";
+            bindings = <
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans           
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans           
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans           
+    &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans             &trans           
             >;
         };
     };
